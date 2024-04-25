@@ -1,23 +1,28 @@
 #![feature(let_chains)]
+#![feature(fs_try_exists)]
 
-use std::{io::Write, thread::sleep};
+use std::{io::Write, thread::sleep, time};
 use std::io;
-use std::io::Stdout;
 use std::sync::atomic::Ordering;
 
 use crossterm::{ExecutableCommand, terminal};
-use sysinfo::{MINIMUM_CPU_UPDATE_INTERVAL as TIME_INTERVAL, System};
+use num_bigint::BigUint;
+use sysinfo::MINIMUM_CPU_UPDATE_INTERVAL as TIME_INTERVAL;
 
 use crate::game::*;
 use crate::handlers::*;
+use crate::start_end::{post_game, start_game};
+
+const FILENAME: &'static str = "save.json";
 
 mod handlers;
 
 mod game;
 mod items;
+mod start_end;
 
 fn main() -> io::Result<()> {
-    let (mut pc_status, mut stdout, mut game_storage) = start_game();
+    let (mut pc_status, mut stdout, mut game_storage) = start_game().expect("Failed to start game");
 
     stdout.execute(terminal::Clear(terminal::ClearType::All))?;
 
@@ -29,52 +34,66 @@ fn main() -> io::Result<()> {
 
         let (rate, roi) = &game_storage.update(cpu_usage);
 
-        match handlers.keys_pressed_for_items(&mut game_storage) {
+        let mut additional_msg: Option<String> = None;
+
+        match handlers.keys_pressed_for_items() {
             HandlerInstruction::Nothing => {}
             HandlerInstruction::BuyItem(item) => {
-                game_storage.buy(item)
+                match game_storage.buy(&item) {
+                    Ok(_) => {
+                        additional_msg = Some(format!("Bought item: {}", &item.description().name))
+                    }
+                    Err(_) => {}
+                }
+                sleep(TIME_INTERVAL)
             }
-            HandlerInstruction::Stop => { break 'game_loop; }
+            HandlerInstruction::Stop => {
+                break 'game_loop;
+            }
         }
 
-        println!(
-            "{esc}[2J{esc}[1;1H\n\
-            /==================================\\\n\
-            | CPU Usage: {:.2}%\n\
-            | Coins: {}\n\
-            | Rate of Income: {} * {} = {}\n\
-            | Items bought: {}\n\
-            \\==================================/",
-            cpu_usage,
-            game_storage.coins,
-            roi,
-            rate,
-            roi * rate,
-            game_storage.items,
-            esc = 27 as char
-        );
+
+        print_to_screen(&mut game_storage, cpu_usage, rate, roi, additional_msg);
 
         sleep(TIME_INTERVAL * game_storage.rate_of_slowdown);
         stdout.flush()?;
     }
 
-
-    println!("Game Over! You have earned {} coins!", game_storage.coins);
-
-    Ok(())
+    post_game(game_storage)
 }
 
-fn start_game() -> (System, Stdout, GameStorage) {
-    let pc_status = System::new();
+fn print_to_screen(
+    game_storage: &mut GameStorage,
+    cpu_usage: f32,
+    rate: &BigUint,
+    roi: &BigUint,
+    additional_msg: Option<String>,
+) {
+    let mut time_sleep_if_bought: u64 = 1;
+    let msg: String = additional_msg.unwrap_or_else(|| {
+        time_sleep_if_bought = 0;
+        String::new()
+    });
 
-    let stdout = io::stdout();
-    let user_args: Vec<String> = std::env::args().collect();
-    let rate_of_slowdown = if user_args.len() > 1 {
-        user_args[1].parse::<u32>().unwrap_or(1)
-    } else {
-        1
-    };
-    let game_storage = GameStorage::new(rate_of_slowdown);
-
-    (pc_status, stdout, game_storage)
+    println!(
+        "{esc}[2J{esc}[1;1H\n\
+            /==================================\\\n\
+            | CPU Usage: {:.2}%\n\
+            | Coins: {}\n\
+            | Rate of Income: {} * {} = {}\n\
+            | Items bought: {}\n\
+            \\==================================/\n\
+            Press `<key> + Enter` to buy an item.\n\
+            Press `q+enter` or Ctrl+C to exit game.\n\
+            {}",
+        cpu_usage,
+        game_storage.coins,
+        roi,
+        rate,
+        roi * rate,
+        game_storage.items,
+        msg,
+        esc = 27 as char
+    );
+    sleep(time::Duration::from_millis(1000 * time_sleep_if_bought))
 }

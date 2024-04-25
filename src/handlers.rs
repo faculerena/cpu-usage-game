@@ -1,11 +1,10 @@
 use std::sync::{
-    Arc,
     atomic::{AtomicBool, AtomicU16, Ordering},
+    Arc,
 };
 
-use crossterm::event::{Event, KeyCode, read};
+use crossterm::event::{read, Event, KeyCode};
 
-use crate::game::GameStorage;
 use crate::items::Item;
 
 pub struct Handlers {
@@ -15,7 +14,10 @@ pub struct Handlers {
 
 impl Handlers {
     fn new(ctrl_c: Arc<AtomicBool>, keys: Arc<AtomicU16>) -> Self {
-        Self { sigkill: ctrl_c, keystrokes: keys }
+        Self {
+            sigkill: ctrl_c,
+            keystrokes: keys,
+        }
     }
 }
 
@@ -26,15 +28,11 @@ pub enum HandlerInstruction {
 }
 
 impl Handlers {
-    pub fn keys_pressed_for_items(&self, game_storage: &mut GameStorage) -> HandlerInstruction {
+    pub fn keys_pressed_for_items(&self) -> HandlerInstruction {
         match self.keystrokes.load(Ordering::SeqCst) {
-            0 => { HandlerInstruction::Nothing }
-            113 => {
-                HandlerInstruction::Stop
-            }
+            0 => HandlerInstruction::Nothing,
+            113 => HandlerInstruction::Stop,
             v => {
-                game_storage.items.push(Item::from(v));
-                println!("Pressed key: {}", v);
                 self.keystrokes.store(0, Ordering::SeqCst);
                 HandlerInstruction::BuyItem(Item::from(v))
             }
@@ -49,7 +47,7 @@ pub fn start_ctrl_c_handler() -> Arc<AtomicBool> {
     ctrlc::set_handler(move || {
         r.store(false, Ordering::SeqCst);
     })
-        .expect("Error setting Ctrl-C handler");
+    .expect("Error setting Ctrl-C handler");
 
     running
 }
@@ -60,8 +58,8 @@ pub fn read_keys_after_enter() -> Arc<AtomicU16> {
 
     std::thread::spawn(move || loop {
         if let Ok(Event::Key(key)) = read()
-            && let KeyCode::Char(c) = key.code {
-            println!("Pressed key: {}", c);
+            && let KeyCode::Char(c) = key.code
+        {
             k.store(c as u16, Ordering::SeqCst);
         }
     });

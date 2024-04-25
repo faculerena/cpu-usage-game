@@ -1,21 +1,24 @@
 use std::fmt::{Display, Formatter};
 
 use num_bigint::BigUint;
+use serde::{Deserialize, Serialize};
 
 use crate::items::Item::{DefaultItem, Item1, Item2};
 
+#[derive(Serialize, Deserialize, Copy, Clone)]
 pub enum Item {
     Item1,
     Item2,
     DefaultItem,
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct Items(Vec<Item>);
 
 pub struct ItemDescription {
-    name: String,
-    cost: BigUint,
-    buff: Buff,
+    pub(crate) name: String,
+    pub(crate) cost: BigUint,
+    pub(crate) buff: Buff,
 }
 
 pub enum Buff {
@@ -59,7 +62,7 @@ impl From<u16> for Item {
         match value {
             65 => Item1,
             66 => Item2,
-            _ => DefaultItem
+            _ => DefaultItem,
         }
     }
 }
@@ -67,9 +70,15 @@ impl From<u16> for Item {
 impl Display for Item {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Item1 => { write!(f, "{}", stringify!(Item1)) }
-            Item2 => { write!(f, "{}", stringify!(Item2)) }
-            DefaultItem => { write!(f, "{}", stringify!(DefaultItem)) }
+            Item1 => {
+                write!(f, "{}", self.description().name)
+            }
+            Item2 => {
+                write!(f, "{}", self.description().name)
+            }
+            DefaultItem => {
+                write!(f, "{}", self.description().name)
+            }
         }
     }
 }
