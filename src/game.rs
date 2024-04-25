@@ -18,7 +18,7 @@ impl GameStorage {
             rate_of_income: BigUint::from(1u8),
             rate_of_slowdown,
             items: items::Items::new(),
-            last_item_cost: BigUint::from(0),
+            last_item_cost: BigUint::from(0u32),
         }
     }
     pub fn rate(&self, cpu_usage: f32) -> BigUint {
@@ -31,4 +31,5 @@ impl GameStorage {
 
         (rate.clone(), roi.clone())
     }
+    pub fn buy(&mut self, _item: Item) {}
 }

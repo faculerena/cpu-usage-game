@@ -1,5 +1,8 @@
+#![feature(let_chains)]
+
 use std::{io::Write, thread::sleep};
 use std::io;
+use std::io::Stdout;
 use std::sync::atomic::Ordering;
 
 use crossterm::{ExecutableCommand, terminal};
@@ -14,18 +17,9 @@ mod game;
 mod items;
 
 fn main() -> io::Result<()> {
-    let mut pc_status = System::new();
+    let (mut pc_status, mut stdout, mut game_storage) = start_game();
 
-    let mut stdout_mine = io::stdout();
-    let user_args: Vec<String> = std::env::args().collect();
-    let rate_of_slowdown = if user_args.len() > 1 {
-        user_args[1].parse::<u32>().unwrap_or(1)
-    } else {
-        1
-    };
-
-    stdout_mine.execute(terminal::Clear(terminal::ClearType::All))?;
-    let mut game_storage = GameStorage::new(rate_of_slowdown);
+    stdout.execute(terminal::Clear(terminal::ClearType::All))?;
 
     let handlers = start_handlers();
 
@@ -36,8 +30,11 @@ fn main() -> io::Result<()> {
         let (rate, roi) = &game_storage.update(cpu_usage);
 
         match handlers.keys_pressed_for_items(&mut game_storage) {
-            Ok(_) => {}
-            Err(HandlerInstruction::Stop) => { break 'game_loop; }
+            HandlerInstruction::Nothing => {}
+            HandlerInstruction::BuyItem(item) => {
+                game_storage.buy(item)
+            }
+            HandlerInstruction::Stop => { break 'game_loop; }
         }
 
         println!(
@@ -58,7 +55,7 @@ fn main() -> io::Result<()> {
         );
 
         sleep(TIME_INTERVAL * game_storage.rate_of_slowdown);
-        stdout_mine.flush()?;
+        stdout.flush()?;
     }
 
 
@@ -67,3 +64,17 @@ fn main() -> io::Result<()> {
     Ok(())
 }
 
+fn start_game() -> (System, Stdout, GameStorage) {
+    let pc_status = System::new();
+
+    let stdout = io::stdout();
+    let user_args: Vec<String> = std::env::args().collect();
+    let rate_of_slowdown = if user_args.len() > 1 {
+        user_args[1].parse::<u32>().unwrap_or(1)
+    } else {
+        1
+    };
+    let game_storage = GameStorage::new(rate_of_slowdown);
+
+    (pc_status, stdout, game_storage)
+}

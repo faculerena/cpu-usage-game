@@ -28,18 +28,18 @@ impl Item {
         match self {
             Item::Item1 => ItemDescription {
                 name: String::from("Item1"),
-                cost: BigUint::from(10),
-                buff: Buff::Additive(BigUint::from(5)),
+                cost: BigUint::from(10u32),
+                buff: Buff::Additive(BigUint::from(5u32)),
             },
             Item::Item2 => ItemDescription {
                 name: String::from("Item2"),
-                cost: BigUint::from(20),
-                buff: Buff::Multiplicative(BigUint::from(2)),
+                cost: BigUint::from(20u32),
+                buff: Buff::Multiplicative(BigUint::from(2u32)),
             },
             Item::DefaultItem => ItemDescription {
                 name: String::from("Default"),
-                cost: BigUint::from(0),
-                buff: Buff::Additive(BigUint::from(0)),
+                cost: BigUint::from(0u32),
+                buff: Buff::Additive(BigUint::from(0u32)),
             },
         }
     }
