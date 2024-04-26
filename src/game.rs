@@ -1,12 +1,13 @@
+use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::io;
 use std::io::Write;
+use std::ops::Add;
 
 use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
 
-use crate::{FILENAME, items};
-use crate::items::*;
+use crate::items::{Buff, Item, Items};
 
 #[derive(Serialize, Deserialize)]
 pub struct GameStorage {
@@ -17,6 +18,7 @@ pub struct GameStorage {
     pub(crate) last_item_cost: BigUint,
     multiplicatives: BigUint,
     additives: BigUint,
+    pub(crate) last_bought: Option<String>,
 }
 
 impl GameStorage {
@@ -25,10 +27,11 @@ impl GameStorage {
             coins: BigUint::from(0u8),
             rate_of_income: BigUint::from(1u8),
             rate_of_slowdown,
-            items: items::Items::new(),
+            items: Items::new(),
             last_item_cost: BigUint::from(0u32),
             multiplicatives: BigUint::from(1u32),
             additives: BigUint::from(0u32),
+            last_bought: None,
         }
     }
     pub fn percent_rate(&self, cpu_usage: f32) -> BigUint {
@@ -36,36 +39,41 @@ impl GameStorage {
     }
 
     fn roi(&self) -> BigUint {
-        let v = (&self.rate_of_income + &self.additives) * &self.multiplicatives;
-        v
+        (&self.rate_of_income + &self.additives) * &self.multiplicatives
     }
     pub fn update(&mut self, cpu_usage: f32) -> (BigUint, BigUint) {
         let rate = &self.percent_rate(cpu_usage);
         let roi = &self.roi();
-        self.coins += (rate * roi);
+        self.coins += rate * roi;
 
         (rate.clone(), roi.clone())
     }
     pub fn buy(&mut self, item: &Item) -> Result<(), GameError> {
         let cost = item.description().cost;
         if self.coins < cost {
-            return Err(GameError::NotEnoughCoins);
+            return Err(GameError::NotEnoughCoins {
+                have: &self.coins,
+                expect: cost,
+            });
         }
+
+        let zero = BigUint::default();
 
         self.last_item_cost.clone_from(&cost);
         self.coins -= &cost;
-        self.set_buffs(&item);
-        self.items.push(item.clone());
+        self.set_buffs(item);
+        let old = &self.items.get(*item).unwrap_or(&zero);
+        self.items.insert(*item, old.add(1u16));
         Ok(())
     }
 
-    pub fn save(&self) -> io::Result<()> {
+    pub fn save(&self, filename: &String) -> io::Result<()> {
         let json_data = serde_json::to_string_pretty(self)?;
 
-        let mut file = File::create(FILENAME)?;
+        let mut file = File::create(filename)?;
 
         file.write_all(json_data.as_bytes())?;
-        println!("Data saved to {}", FILENAME);
+        println!("Data saved to {filename}");
         Ok(())
     }
     fn set_buffs(&mut self, item: &Item) {
@@ -76,6 +84,22 @@ impl GameStorage {
     }
 }
 
-pub(crate) enum GameError {
-    NotEnoughCoins,
+pub enum GameError<'err> {
+    NotEnoughCoins {
+        have: &'err BigUint,
+        expect: BigUint,
+    },
+}
+
+impl Display for GameError<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            GameError::NotEnoughCoins { have, expect } => {
+                write!(
+                    f,
+                    "Not enough coins. You have {have}, but you need {expect}."
+                )
+            }
+        }
+    }
 }

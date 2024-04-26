@@ -1,24 +1,15 @@
 use std::sync::{
-    atomic::{AtomicBool, AtomicU16, Ordering},
     Arc,
+    atomic::{AtomicBool, AtomicU16, Ordering},
 };
 
-use crossterm::event::{read, Event, KeyCode};
+use crossterm::event::{Event, KeyCode, read};
 
 use crate::items::Item;
 
 pub struct Handlers {
     pub sigkill: Arc<AtomicBool>,
     pub keystrokes: Arc<AtomicU16>,
-}
-
-impl Handlers {
-    fn new(ctrl_c: Arc<AtomicBool>, keys: Arc<AtomicU16>) -> Self {
-        Self {
-            sigkill: ctrl_c,
-            keystrokes: keys,
-        }
-    }
 }
 
 pub enum HandlerInstruction {
@@ -28,6 +19,12 @@ pub enum HandlerInstruction {
 }
 
 impl Handlers {
+    fn new(ctrl_c: Arc<AtomicBool>, keys: Arc<AtomicU16>) -> Self {
+        Self {
+            sigkill: ctrl_c,
+            keystrokes: keys,
+        }
+    }
     pub fn keys_pressed_for_items(&self) -> HandlerInstruction {
         match self.keystrokes.load(Ordering::SeqCst) {
             0 => HandlerInstruction::Nothing,
@@ -47,7 +44,7 @@ pub fn start_ctrl_c_handler() -> Arc<AtomicBool> {
     ctrlc::set_handler(move || {
         r.store(false, Ordering::SeqCst);
     })
-    .expect("Error setting Ctrl-C handler");
+        .expect("Error setting Ctrl-C handler");
 
     running
 }

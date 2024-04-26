@@ -1,19 +1,21 @@
+use core::fmt::Result;
+use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 
 use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
 
-use crate::items::Item::{DefaultItem, Item1, Item2};
+use crate::items::Item::{Default, Item1, Item2};
 
-#[derive(Serialize, Deserialize, Copy, Clone)]
+#[derive(Serialize, Deserialize, Copy, Clone, Hash, Ord, PartialOrd, Eq, PartialEq, Debug)]
 pub enum Item {
     Item1,
     Item2,
-    DefaultItem,
+    Default,
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct Items(Vec<Item>);
+#[derive(Serialize, Deserialize, Eq, PartialEq)]
+pub struct Items(HashMap<Item, BigUint>);
 
 pub struct ItemDescription {
     pub(crate) name: String,
@@ -29,17 +31,17 @@ pub enum Buff {
 impl Item {
     pub fn description(&self) -> ItemDescription {
         match self {
-            Item::Item1 => ItemDescription {
+            Self::Item1 => ItemDescription {
                 name: String::from("Item1"),
                 cost: BigUint::from(10u32),
                 buff: Buff::Additive(BigUint::from(5u32)),
             },
-            Item::Item2 => ItemDescription {
+            Self::Item2 => ItemDescription {
                 name: String::from("Item2"),
                 cost: BigUint::from(20u32),
                 buff: Buff::Multiplicative(BigUint::from(2u32)),
             },
-            Item::DefaultItem => ItemDescription {
+            Self::Default => ItemDescription {
                 name: String::from("Default"),
                 cost: BigUint::from(0u32),
                 buff: Buff::Additive(BigUint::from(0u32)),
@@ -50,10 +52,14 @@ impl Item {
 
 impl Items {
     pub fn new() -> Self {
-        Self(Vec::new())
+        Self(HashMap::new())
     }
-    pub fn push(&mut self, item: Item) {
-        self.0.push(item)
+    pub fn get(&self, item: Item) -> Option<&BigUint> {
+        self.0.get(&item)
+    }
+
+    pub fn insert(&mut self, item: Item, value: BigUint) {
+        self.0.insert(item, value);
     }
 }
 
@@ -62,30 +68,28 @@ impl From<u16> for Item {
         match value {
             65 => Item1,
             66 => Item2,
-            _ => DefaultItem,
+            _ => Default,
         }
     }
 }
 
 impl Display for Item {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Item1 => {
-                write!(f, "{}", self.description().name)
-            }
-            Item2 => {
-                write!(f, "{}", self.description().name)
-            }
-            DefaultItem => {
-                write!(f, "{}", self.description().name)
-            }
-        }
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "{}", self.description().name)
     }
 }
 
 impl Display for Items {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let items_str: Vec<String> = self.0.iter().map(|item| format!("{}", item)).collect();
-        write!(f, "[{}]", items_str.join(", "))
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        let mut first = true;
+        for (item, quantity) in &self.0 {
+            if first {
+                first = false;
+            } else {
+                write!(f, ", ")?;
+            }
+            write!(f, "{item}: {quantity}")?;
+        }
+        Ok(())
     }
 }
