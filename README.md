@@ -1,13 +1,13 @@
 # The CPU usage game
 
 This "game" was born when `rustc` made my pc so slow that
-even ![Cookie Clicker](https://orteil.dashnet.org/cookieclicker/) was slow.
+even [Cookie Clicker](https://orteil.dashnet.org/cookieclicker/) was slow.
 
 ## The idea
 
 If sometimes the CPU is at >99% and the games became slow, what is the impediment to make a game that when your CPU is
 being _really_ used, it goes FASTER? This is just
-a ![Paperclip Maximizer](https://www.lesswrong.com/tag/squiggle-maximizer-formerly-paperclip-maximizer) or Cookie
+a [Paperclip Maximizer](https://www.lesswrong.com/tag/squiggle-maximizer-formerly-paperclip-maximizer) or Cookie
 Clicker (i.e., an idle game) that goes faster (linearly) with your CPU usage.
 
 ## How to run
@@ -36,9 +36,9 @@ There are a few flags:
 
 `--rate_of_slowdown` (reduce the cicle frequency by a factor)
 
-`new_game` (ignores the save in folder)
+`--new_game` (ignores the save in folder)
 
-`save_name` (reads and saves to a specific file instead of writing to `save.json`)
+`--save_name` (reads and saves to a specific file instead of writing to `save.json`)
 
 ## TODO list
 
