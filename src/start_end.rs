@@ -14,11 +14,11 @@ struct Args {
     #[arg(short = 'r', long, default_value_t = 1)]
     rate_of_slowdown: u32,
 
-    #[arg(short = 'n', long, default_value_t = true)]
+    #[arg(short = 'n', long, default_value_t = false)]
     new_game: bool,
 
-    #[arg(short = 's', long)]
-    save_name: Option<String>,
+    #[arg(short = 's', long, default_value_t = String::new())]
+    save_name: String,
 }
 
 pub fn start_game() -> io::Result<(System, Stdout, GameStorage, String)> {
@@ -26,7 +26,7 @@ pub fn start_game() -> io::Result<(System, Stdout, GameStorage, String)> {
     let stdout = io::stdout();
     let user_args: Args = Args::parse();
 
-    let mut filename = user_args.save_name.unwrap_or(String::from("save.json"));
+    let mut filename = if user_args.save_name.is_empty() { String::from("save.json") } else { user_args.save_name };
     if !filename.ends_with(".json") {
         filename.push_str(".json")
     }
