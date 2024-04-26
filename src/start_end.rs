@@ -1,6 +1,7 @@
-use std::fs::File;
-use std::io;
-use std::io::Stdout;
+use std::{
+    fs::File,
+    io::{self, Stdout},
+};
 
 use clap::Parser;
 use sysinfo::System;
@@ -18,7 +19,6 @@ struct Args {
 
     #[arg(short = 's', long)]
     save_name: Option<String>,
-
 }
 
 pub fn start_game() -> io::Result<(System, Stdout, GameStorage, String)> {

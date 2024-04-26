@@ -6,13 +6,15 @@ use std::{
     thread::sleep,
 };
 
-use crossterm::{ExecutableCommand, terminal};
+use crossterm::{terminal, ExecutableCommand};
 use num_bigint::BigUint;
 use sysinfo::MINIMUM_CPU_UPDATE_INTERVAL as TIME_INTERVAL;
 
-use crate::game::GameStorage;
-use crate::handlers::{HandlerInstruction, start_handlers};
-use crate::start_end::{post_game, start_game};
+use crate::{
+    game::GameStorage,
+    handlers::{start_handlers, HandlerInstruction},
+    start_end::{post_game, start_game},
+};
 
 mod handlers;
 
@@ -22,7 +24,7 @@ mod start_end;
 
 fn main() -> io::Result<()> {
     let (mut pc_status, mut stdout, mut game_storage, filename) = match start_game() {
-        Ok((sys, out, store, filename)) => { (sys, out, store, filename) }
+        Ok((sys, out, store, filename)) => (sys, out, store, filename),
         Err(err) => {
             return Err(err);
         }

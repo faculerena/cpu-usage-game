@@ -1,8 +1,9 @@
-use std::fmt::{Display, Formatter};
-use std::fs::File;
-use std::io;
-use std::io::Write;
-use std::ops::Add;
+use std::{
+    fmt::{Display, Formatter},
+    fs::File,
+    io::{self, Write},
+    ops::Add,
+};
 
 use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};

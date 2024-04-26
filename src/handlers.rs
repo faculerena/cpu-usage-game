@@ -1,9 +1,9 @@
 use std::sync::{
-    Arc,
     atomic::{AtomicBool, AtomicU16, Ordering},
+    Arc,
 };
 
-use crossterm::event::{Event, KeyCode, read};
+use crossterm::event::{read, Event, KeyCode};
 
 use crate::items::Item;
 
@@ -44,7 +44,7 @@ pub fn start_ctrl_c_handler() -> Arc<AtomicBool> {
     ctrlc::set_handler(move || {
         r.store(false, Ordering::SeqCst);
     })
-        .expect("Error setting Ctrl-C handler");
+    .expect("Error setting Ctrl-C handler");
 
     running
 }

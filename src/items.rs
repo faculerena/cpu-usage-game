@@ -1,6 +1,8 @@
 use core::fmt::Result;
-use std::collections::HashMap;
-use std::fmt::{Display, Formatter};
+use std::{
+    collections::HashMap,
+    fmt::{Display, Formatter},
+};
 
 use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
